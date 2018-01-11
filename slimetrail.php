@@ -3,6 +3,34 @@ ini_set("error_reporting","E_ALL");
 session_start();
 $DIMENSION = 7;
 
+
+function GetInitPosition() {
+  global $DIMENSION;
+  return array(floor($DIMENSION/2+0.5),floor($DIMENSION/2-1.5));
+}
+
+function SetGameCursor($cursor) {
+  global $DIMENSION;
+  $board = $_SESSION['board'];
+  $history = $_SESSION['history'];
+    for( $y=0 ; $y<$DIMENSION ; $y++ )
+    for( $x=0 ; $x<$DIMENSION ; $x++ )
+        $board[$y][$x] = "";
+  $white = GetInitPosition();
+  if ( $cursor>0 ) {
+    $board[$white[1]][$white[0]] = 'b';
+    for( $i=0 ; $i<$cursor-1 ; $i++ ) {
+	$board[$history[$i][1]][$history[$i][0]] = 'b';
+    }
+    $white = $history[$cursor-1];
+  }
+  $_SESSION['white'] = $white;
+  $_SESSION['board'] = $board;
+  $_SESSION['cursor'] = $cursor;
+  $_SESSION['jogador'] = $cursor % 2;
+}
+
+// Returns an stbd string
 function GetSTBD($board,$white,$player) {
   global $DIMENSION;
   $dimstr = sprintf("%02x",$DIMENSION);
@@ -35,6 +63,7 @@ function GetSTBD($board,$white,$player) {
   return $stbd;
 }
 
+// Parse de string stdb para estado
 function PutSTBD($stbd) {
   sscanf($stbd,"%02x%02x%02x%02x%1x", $DIMENSION, $DIMENSION, 
 		$_SESSION['white'][0],$_SESSION['white'][1],$_SESSION['jogador']);
@@ -53,6 +82,8 @@ function GetWinner($white) {
   return $vencedor;
 }
 
+// Determina numero de jogadas validas possiveis.
+// retorna 0 quando bloqueio.
 function GetBlocked($board, $white) {
   global $DIMENSION;
   $verdes = 0;
@@ -67,6 +98,7 @@ function GetBlocked($board, $white) {
   }
   return ( $verdes==0 );
 }
+
 function CreateDijkstraMat(&$mat,$b)
 {
   global $DIMENSION;
@@ -295,10 +327,18 @@ function GetBest($level="c")
   return GetBestC($level);
 }
 
+function DisplayCoords($r)
+{
+  global $DIMENSION;
+  return chr($r[0]+ord('a')) . ($DIMENSION-$r[1]);
+}
+
+
 function Init() {
     global $DIMENSION;
 
-    $white = array(floor($DIMENSION/2+0.5),floor($DIMENSION/2-1.5));
+    //$white = array(floor($DIMENSION/2+0.5),floor($DIMENSION/2-1.5));
+    $white = GetInitPosition();
     //echo "reset";
     unset($_SESSION['board']);
     unset($_SESSION['mat1']);
@@ -324,6 +364,8 @@ function Init() {
     $_SESSION['player_1'] = 'Local';
     $_SESSION['max_level'] = 5;
     $_SESSION['nplayed'] = 0;
+    $_SESSION['cursor'] = 0;
+    $_SESSION['history'] = array();
 /*
 if ( isset($_GET['debug']) ) {
  print "<p>mat1</p>";
@@ -334,6 +376,7 @@ if ( isset($_GET['debug']) ) {
 }
 */
 }
+
   if ( !is_array($_SESSION['board']) ) Init();
 
   $board = $_SESSION['board'];
@@ -355,11 +398,14 @@ if ( isset($_GET['debug']) ) {
         else  $_SESSION['player_1']='Local';
 	 header("Location: " . $_SERVER['PHP_SELF'] );
   }
-
+  if ( isset($_GET['hist']) ) {
+	SetGameCursor($_GET['hist']);
+	header("Location: " . $_SERVER['PHP_SELF'] );
+  }
   if ( isset($_GET['x']) &&  isset($_GET['y']) && $_GET['x']!="" && $_GET['y']!="" && $_GET['x']>=0 && $_GET['y']>=0 ) {
 	$x = $white[0];
 	$y = $white[1];
-	if ( abs($x-$_GET['x'])<=1 &&  abs($x-$_GET['x'])<=1 ) {	
+	if ( abs($x-$_GET['x'])<=1 && abs($y-$_GET['y'])<=1 && (!($x==$_GET['x'] && $y==$_GET['y'])) && $board[$_GET['y']][$_GET['x']]!='b' ) {	
 	  $board[$y][$x] = 'b';
 	  //$_SESSION['mat1'][$y][$x] = 40;
 	  //$_SESSION['mat2'][$y][$x] = 40;
@@ -371,7 +417,9 @@ if ( isset($_GET['debug']) ) {
 	  $_SESSION['board'] = $board;
 	  $_SESSION['white'] = $white;
 	  $_SESSION['jogador'] = (1-$_SESSION['jogador']);
-	  $_SESSION['nplayed'] += 1;
+	  $_SESSION['history'][$_SESSION['cursor']] = $white;
+	  $_SESSION['cursor'] += 1;
+	  $_SESSION['nplayed'] = $_SESSION['cursor'];
     	}
     header("Location: " . $_SERVER['PHP_SELF'] );
   }
@@ -379,6 +427,20 @@ if ( isset($_GET['debug']) ) {
   $vencedor = GetWinner($white);
   if ( $vencedor==="" && GetBlocked($board,$white) )
 	$vencedor = 1-$_SESSION['jogador'];
+
+if ( $vencedor==="" ) {
+  if ( $_GET['hint']!="" ) {
+    GetBest( $_GET['hint'] );
+  }
+  else {
+  	if ( 	( $_SESSION['jogador']==0 && $_SESSION['player_0']=='Computer' ) ||
+        	( $_SESSION['jogador']==1 && $_SESSION['player_1']=='Computer' ) ) {
+		GetBest();
+        	header("Location: ". $_SERVER['PHP_SELF'] . "?x=" . $best[0] . "&y=". $best[1]);
+	}
+  }
+}
+
 
   //print_r($white);
   //print_r($board); //[6][6] = 'b';
@@ -395,6 +457,23 @@ if ( isset($_GET['debug']) ) {
     <script language="javascript" type="text/javascript">
       function PlayCell(x,y)
       {
+    	if ( typeof PlayCell.counter != 'undefined' ) {
+		return;
+	}
+        PlayCell.counter = 1;
+	var table = document.getElementById("board_tab");
+
+	for (var i = 0, row;  row  = table.rows[i]; i++) {
+   	for (var j = 0, cell; cell = row.cells[j];  j++) {
+		//var navlink = "square".concat(j,i);
+            //document.getElementById(navlink).className = 'black';
+		if ( cell.className=='active' )
+		  cell.className = 'square';
+                if ( cell.className=='white' )
+                  cell.className = 'black';
+
+	}}
+
 	    var navlink = "square".concat(x,y);
             document.getElementById(navlink).className = 'white';
 	    var dest = "/~jml/slimetrail/index.php?x=".concat(x,"&y=",y);
@@ -403,35 +482,65 @@ if ( isset($_GET['debug']) ) {
     </script>
   </head>
   <body>
+<div id='left_div' style='float:left'>
     <h1>SlimeTrail</h1>
-
 <?php
 
-if ( $vencedor==="" ) {
-  if ( $_GET['hint']!="" ) {
-    GetBest( $_GET['hint'] );
-  }
-  else {
-	if ( $_SESSION['jogador']==0 && $_SESSION['player_0']=='Computer' ) GetBest();
-	if ( $_SESSION['jogador']==1 && $_SESSION['player_1']=='Computer' ) GetBest();
-  }
-}
-
-
-
+  // Draw players table
   echo "<table>\n  <tr>\n";
+  echo "    <td> </td>\n";
   if ( $_SESSION['jogador']>0 ) 
 	echo "<td> Jogador 1 </td> <th> Jogador 2 </th>\n";
   else
 	echo "<th> Jogador 1 </th> <td> Jogador 2 </td>\n";
   echo "  </tr>\n  <tr>\n";
+  echo "    <td> </td>\n";
   echo "   <td class='playertype'> ".
 	"<a href='?p0=t'>". $_SESSION['player_0'] ."</a></td>\n";
   echo "   <td class='playertype'> ".
 	"<a href='?p1=t'>". $_SESSION['player_1'] ."</a></td>\n";
-  echo "  </tr>\n</table>\n";
+  echo "  </tr>\n";
+  for( $line=1, $i=0 ; $i<$_SESSION['nplayed'] ; $line++ ) {
+    echo "  <tr>\n";
+    echo "    <td  class='playertype'>$line</td>\n";
+    echo "    <td  class='playertype'> ";
+    echo " <a href='?hist=". ($i+1) ."'>". DisplayCoords($_SESSION['history'][$i]) . " </a></td>\n";
+    $i++;
+    if ( $i<$_SESSION['nplayed'] ) 
+    {
+	echo "    <td  class='playertype'> ";
+	echo " <a href='?hist=". ($i+1) . "'>". DisplayCoords($_SESSION['history'][$i]) . " </a></td>\n";
+    }
+    $i++;
+    echo "  </tr>\n";
+  }
+  echo "</table>\n";
+
+if ( $vencedor!=="" )
+        echo "<h2>O jogador " . ($vencedor+1) . " Venceu!</h2>\n";
+else {
+  if ( $_GET['hint']!="" ) {
+        //if ( $_GET['debug']>=1 ) print_r($best);
+        echo "<p>Best move: ". chr($best[0]+ord('a')) . ($DIMENSION-$best[1]) . " : " . round($bestval,2) . "</p>";
+  }
+}
+
+
+echo "<a href='?init=7'>[Recome&ccedil;ar]</a>\n";
+echo "<a href='?hint=c'>[Ajuda]</a>\n";
+echo "<br><br><span style='color: gray; font-size: 8pt'>STBD: " . GetSTBD($board,$white,$_SESSION['jogador']) . "</span>\n";
+
+
+//echo  $_SESSION['nplayed'] ."\n";
+//print_r($_SESSION['history']);
+  echo "</div>\n";
+
+  echo "<div style='float:right'>\n";
+
 //  $verdes = 0;
-  echo "<table class='board'>\n";
+
+  // Draw board
+  echo "<table id='board_tab' class='board'>\n";
   for( $y=0 ; $y<$DIMENSION ; $y++ ) {
     echo "  <tr>\n";
     echo "    <td class='legend_y'>" . ($DIMENSION-$y) . "</td>\n";
@@ -441,12 +550,14 @@ if ( $vencedor==="" ) {
       $id = "square" . $x . $y;
       if ( $board[$y][$x]=='b' ) $class="black";
       else if ( $x==$white[0] && $y==$white[1] ) $class="white";
-      else if ( $vencedor=="" && abs($x-$white[0])<=1 && abs($y-$white[1])<=1 ) {
+      else if ( $vencedor==="" && abs($x-$white[0])<=1 && abs($y-$white[1])<=1 ) {
 	$class = "active";
 	//$action = "onclick='window.location.href=\"" .  $_SERVER['PHP_SELF'] . "?x=$x&amp;y=$y\";'";
 	$action = "onclick='PlayCell($x,$y);'";
       }
       echo "    <td id='$id' class='$class' $action> ";
+if ( $y==$DIMENSION-1 && $x==0 ) echo 1;
+if ( $y==0 && $x==$DIMENSION-1 ) echo 2;
       echo " </td>\n";
     }
     echo "  </tr>\n";
@@ -461,26 +572,10 @@ if ( $vencedor==="" ) {
   echo "</table>\n";
 
 //print_r($_SESSION['board']);
+//print_r($_SESSION);
 //GetBest();
 
-if ( $vencedor!=="" )
-	echo "<h2>O jogador " . ($vencedor+1) . " Venceu!</h2>\n";
-else {
-  if ( $_GET['hint']!="" ) {
-	//if ( $_GET['debug']>=1 ) print_r($best);
-	echo "<p>Best move: ". chr($best[0]+ord('a')) . ($DIMENSION-$best[1]) . " : " . round($bestval,2) . "</p>";
-  }
-  if ( ( $_SESSION['jogador']==0 && $_SESSION['player_0']=='Computer' ) ||
-        ( $_SESSION['jogador']==1 && $_SESSION['player_1']=='Computer' ) ) 
-	header("Location: ". $_SERVER['PHP_SELF'] . "?x=" . $best[0] . "&y=". $best[1]);
-}
-?>
-
-<a href='?init=7'>[Recome&ccedil;ar]</a>
-<a href='?hint=c'>[Ajuda]</a>
-<?php
-echo "<br><br><span style='color: gray; font-size: 8pt'>STBD: " . GetSTBD($board,$white,$_SESSION['jogador']) . "</span>\n";
-
+echo "</div>\n";
 ?>
   </body>
 </html>

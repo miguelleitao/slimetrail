@@ -1,12 +1,6 @@
-/*
- * 	Slimetrail.c
- *
- *	Miguel Leitao, 2005
- *
- */
+
 
 #define DIMENSION  7
-
 int _DEBUG_ = 0;
 int MAX_LEVEL=8;
 int MIN_LEVEL=4;
@@ -545,7 +539,11 @@ void Init() {
 }
 
 void Usage() {
-  fprintf(stderr,"Usage: slimetrail STBD [MaxLevel [MinLevel]]\n\n");
+  fprintf(stderr,"Usage: slimetrail [Options] STBD [MaxLevel [MinLevel]]\n");
+  fprintf(stderr,"    Options: -f    full\n");
+  fprintf(stderr,"             -h    html output\n");
+  fprintf(stderr,"             -d    debug\n");
+  fprintf(stderr,"             -x    hexadecimal output\n");
 }
 
 
