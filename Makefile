@@ -8,7 +8,7 @@ all: ${TARGET}
 
 ${TARGET}: ${OBJ}
 
-push: ${TARGET}.c ${TARGET}.php Makefile
+push: ${TARGET}.c ${TARGET}.php Makefile README.md
 	git add $^
 	git commit -m "update"
 	git push
