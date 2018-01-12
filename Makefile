@@ -13,7 +13,7 @@ commit: all
 	quit \
 	END_SCRIPT
 
-push: ${TARGET}.c ${TARGET}.php Makefile README.md
+push: ${TARGET}.c ${TARGET}.php ${TARGET}.css index.html Makefile README.md
 	git add $^
 	git commit -m "update"
 	git push

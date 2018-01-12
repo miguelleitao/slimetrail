@@ -2,8 +2,8 @@
 ini_set("error_reporting","E_ALL");
 session_start();
 $DIMENSION = 7;
-
-
+//phpinfo();
+//
 function GetInitPosition() {
   global $DIMENSION;
   return array(floor($DIMENSION/2+0.5),floor($DIMENSION/2-1.5));
@@ -316,7 +316,10 @@ function GetBestC($level="") {
 	$full = "-f ";
 	$level = "";
   }
-  $res = shell_exec("/home/docentes/jml/WWW/slimetrail/slimetrail -x $full".  GetSTBD($_SESSION['board'],$_SESSION['white'],$_SESSION['jogador']) . " $level" );
+ 
+  $sfname = $_SERVER["SCRIPT_FILENAME"] ;
+  $efname = dirname($sfname) . "/slimetrail";
+  $res = shell_exec("$efname -x $full".  GetSTBD($_SESSION['board'],$_SESSION['white'],$_SESSION['jogador']) . " $level" );
   if ( $full=='-f' ) echo $res;
   else  sscanf($res,"%2x%2x %f %d",$best[0],$best[1],$bestval,$bestlevel);
 }
@@ -476,7 +479,7 @@ if ( $vencedor==="" ) {
 
 	    var navlink = "square".concat(x,y);
             document.getElementById(navlink).className = 'white';
-	    var dest = "/~jml/slimetrail/index.php?x=".concat(x,"&y=",y);
+	    var dest = "slimetrail.php?x=".concat(x,"&y=",y);
 	    window.location.href=dest;
       }
     </script>
