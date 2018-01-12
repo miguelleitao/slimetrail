@@ -44,7 +44,7 @@ MYSQL *ConnectDB()
       fprintf(stderr, "%s\n", mysql_error(con));
       //exit(1);
   } else
-  if (mysql_real_connect(con, "ave.dee.isep.ipp.pt", "jml", "jml2014", 
+  if (mysql_real_connect(con, DB_HOST, DB_USER, DB_PASS, 
           NULL, 0, NULL, 0) == NULL) 
   {
       fprintf(stderr, "%s\n", mysql_error(con));
