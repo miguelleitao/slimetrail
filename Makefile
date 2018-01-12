@@ -6,13 +6,6 @@ SRC=${TARGET}.c
 
 all: ${TARGET}
 
-commit: all
-	sftp magnocom@ftp.magnocomp.com <<END_SCRIPT \
-	cd www/miguelleitao.com/slimetrail \
-	put index.php \
-	quit \
-	END_SCRIPT
-
 push: ${TARGET}.c ${TARGET}.php ${TARGET}.css index.html Makefile upload.sh README.md
 	git add $^
 	git commit -m "update"
