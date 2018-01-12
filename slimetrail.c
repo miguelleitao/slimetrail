@@ -8,6 +8,7 @@ int FULL=0;
 int HTML=0;
 int HEX=0;
 
+#include "db_config.ini"
 
 #include <stdio.h>
 #include <string.h>
