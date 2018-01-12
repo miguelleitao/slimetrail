@@ -12,7 +12,6 @@ int HEX=0;
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <my_global.h>
 #include <mysql.h>
 #include <math.h>
 
@@ -115,7 +114,7 @@ char* GetSTBD(BoardType board, unsigned char* white, int player, char *stbd)
   int byte = 0;
   int count = 0;
   int x, y;
-  char block[4];
+  char block[9];		// 4 should be enough but trigger warning in sprintf
   for( y=0 ; y<DIMENSION ; y++ )
     for( x=0 ; x<DIMENSION ; x++ ) {
       byte += byte;
