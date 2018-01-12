@@ -12,6 +12,8 @@ put index.html
 put slimetrail.php
 put slimetrail
 put slimetrail.css
+put slimetrail.c
+put Makefile
 quit
 END_SCRIPT
 

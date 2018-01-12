@@ -317,9 +317,16 @@ function GetBestC($level="") {
 	$level = "";
   }
  
-  $sfname = $_SERVER["SCRIPT_FILENAME"] ;
-  $efname = dirname($sfname) . "/slimetrail";
+  //$sfname = $_SERVER["SCRIPT_FILENAME"] ;
+  //$efname = dirname($sfname) . "/slimetrail";
+  $efname = "/usr/local/bin/slimetrail";
+echo "$efname -x $full".  GetSTBD($_SESSION['board'],$_SESSION['white'],$_SESSION['jogador']) . " $level \n" ;
   $res = shell_exec("$efname -x $full".  GetSTBD($_SESSION['board'],$_SESSION['white'],$_SESSION['jogador']) . " $level" );
+  echo "res='$res'\n";
+  if ($res==NULL) {
+          echo "erro\n";
+	echo shell_exec("/usr/local/bin/slimetrail -x $full".  GetSTBD($_SESSION['board'],$_SESSION['white'],$_SESSION['jogador']) . " $level");
+  }
   if ( $full=='-f' ) echo $res;
   else  sscanf($res,"%2x%2x %f %d",$best[0],$best[1],$bestval,$bestlevel);
 }

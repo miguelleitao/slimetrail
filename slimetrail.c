@@ -44,7 +44,7 @@ MYSQL *ConnectDB()
       fprintf(stderr, "%s\n", mysql_error(con));
       //exit(1);
   } else
-  if (mysql_real_connect(con, "localhost", "jml", "jml2014", 
+  if (mysql_real_connect(con, "ave.dee.isep.ipp.pt", "jml", "jml2014", 
           NULL, 0, NULL, 0) == NULL) 
   {
       fprintf(stderr, "%s\n", mysql_error(con));
@@ -548,6 +548,7 @@ void Usage() {
 
 int main(int argc, char **argv)
 {
+  //printf("%s\n", argv[0]);
   while ( argc>2 && argv[1][0]=='-' ) {
     switch ( argv[1][1] ) {
       case 'f':
